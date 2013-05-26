@@ -24,6 +24,14 @@ else
 	echo "check_mk	6556/tcp" >> /etc/services
 fi
 
+if [ -f /usr/bin/check_mk_agent ] 
+then
+	echo "Found check_mk agent."
+else
+	echo "Installing check_mk agent."
+	cp ${agentpath} /usr/bin/check_mk_agent
+fi
+
 if svcs check_mk/tcp:default 1> /dev/null
 then 
 	echo "Found service definition for check_mk"
