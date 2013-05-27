@@ -16,6 +16,15 @@ then
 	exit 1
 fi
 
+# Install mpathadm if necessary
+if which mpathadm 2>&1 1> /dev/null 
+then
+	echo "Found mpathadm."
+else
+	echo "Installing mpathadm"
+	pkg install mpathadm
+fi
+
 if grep -q '6556/tcp' /etc/services
 then
 	echo "Found check_mk definition in /etc/services"
