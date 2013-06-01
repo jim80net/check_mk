@@ -2,30 +2,6 @@
 # Written by jpark@jim80.net
 # From: http://cunninghamshane.com/monitor-openindianasolaris-11-with-check_mk_agent-and-nagios/
 
-UNAMEV=$(uname -v)
-case $UNAMEV in
-	omnios*) 
-		UNAME=omnios
-		EXECUTABLES="mpathadm"
-		PKGINSTALL="pkg install"
-		DESTPATH="/usr/bin/check_mk_agent"
-		SOURCEMANIFEST=${basedir}/support_solaris/check_mk-tcp.xml.omnios
-		DESTMANIFEST=/lib/svc/manifest/network/check_mk-tcp.xml
-		;;
-	joyent*) 
-		UNAME=smartos
-		EXECUTABLES="mpathadm"
-		PKGINSTALL="pkgin in"
-		DESTPATH="/opt/custom/bin/check_mk_agent"
-		SOURCEMANIFEST=${basedir}/support_solaris/check_mk-tcp.xml.smartos
-		DESTMANIFEST=/opt/custom/smf/check_mk-tcp.xml
-		;;
-	*) UNAME=undef
-		echo "Unable to identify solaris version. Quitting."
-		exit 1
-		;;
-esac
-
 agent=check_mk_agent.solaris
 
 basedir=$(dirname "$0")
@@ -38,6 +14,62 @@ then
 	echo "This script must be run as root." 1>&2
 	exit 1
 fi
+
+# Find out what zone we are running in
+# Treat all pre-Solaris 10 systems as "global"
+if type zonename &>/dev/null
+then
+    zonename=$(zonename)
+    pszone="-z $zonename"
+else
+    zonename="global"
+    pszone="-A"
+fi
+
+case $zonename in
+	global)
+		UNAMEV=$(uname -v)
+		case $UNAMEV in
+			omnios*) 
+				UNAME=omnios
+				EXECUTABLES="mpathadm"
+				PKGINSTALL="pkg install"
+				DESTPATH="/usr/bin/check_mk_agent"
+				SOURCEMANIFEST=${basedir}/support_solaris/check_mk-tcp.xml.omnios
+				DESTMANIFEST=/lib/svc/manifest/network/check_mk-tcp.xml
+				;;
+			joyent*) 
+				UNAME=smartos
+				EXECUTABLES="mpathadm"
+				PKGINSTALL="pkgin in"
+				DESTPATH="/opt/custom/bin/check_mk_agent"
+				SOURCEMANIFEST=${basedir}/support_solaris/check_mk-tcp.xml.smartos
+				DESTMANIFEST=/opt/custom/smf/check_mk-tcp.xml
+				;;
+			*) UNAME=undef
+				echo "Unable to identify solaris version. Quitting."
+				exit 1
+				;;
+		esac
+		;;
+	*)
+		UNAMEV=$(uname -v)
+		case $UNAMEV in
+			joyent*) 
+				UNAME=smartos
+				EXECUTABLES="mpathadm"
+				PKGINSTALL="pkgin in"
+				DESTPATH="/opt/local/bin/check_mk_agent"
+				SOURCEMANIFEST=${basedir}/support_solaris/check_mk-tcp.xml.smartoszone
+				DESTMANIFEST=/var/svc/manifest/network/check_mk-tcp.xml
+				;;
+			*) UNAME=undef
+				echo "Unable to identify solaris version. Quitting."
+				exit 1
+				;;
+		esac
+		;;
+esac
 
 # Install EXECUTABLES
 if [ "${EXECUTABLES}" != "" ] 
