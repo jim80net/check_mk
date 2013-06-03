@@ -34,6 +34,9 @@
 		timeout_seconds='0'>
 		<method_context>
 			<method_credential user='root' group='root' />
+			<method_environment>
+				<envvar name="PATH" value="/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin" />
+			</method_environment>
 		</method_context>
 		<propval name='arg0' type='astring'
 		    value='/opt/local/bin/check_mk_agent' />
