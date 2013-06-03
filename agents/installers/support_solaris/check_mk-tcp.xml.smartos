@@ -36,7 +36,7 @@
 			<method_credential user='root' group='root' />
 		</method_context>
 		<propval name='arg0' type='astring'
-		    value='/usr/bin/check_mk_agent' />
+		    value='/opt/custom/bin/check_mk_agent' />
 	</exec_method>
 
 	<!--

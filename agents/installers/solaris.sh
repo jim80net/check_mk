@@ -4,6 +4,13 @@
 
 agent=check_mk_agent.solaris
 
+if [ "$1" = "force" ] 
+then
+	FORCE=1
+else
+	FORCE=0
+fi
+
 basedir=$(dirname "$0")
 agentdir=${basedir}/..
 
@@ -37,6 +44,8 @@ case $zonename in
 				DESTPATH="/usr/bin/check_mk_agent"
 				SOURCEMANIFEST=${basedir}/support_solaris/check_mk-tcp.xml.omnios
 				DESTMANIFEST=/lib/svc/manifest/network/check_mk-tcp.xml
+				DESTLIBDIR=/opt/local/lib/check_mk_agent
+				DESTCONFDIR=/opt/local/etc/check_mk
 				;;
 			joyent*) 
 				UNAME=smartos
@@ -45,6 +54,8 @@ case $zonename in
 				DESTPATH="/opt/custom/bin/check_mk_agent"
 				SOURCEMANIFEST=${basedir}/support_solaris/check_mk-tcp.xml.smartos
 				DESTMANIFEST=/opt/custom/smf/check_mk-tcp.xml
+				DESTLIBDIR=/opt/custom/lib/check_mk_agent
+				DESTCONFDIR=/opt/custom/etc/check_mk
 				;;
 			*) UNAME=undef
 				echo "Unable to identify solaris version. Quitting."
@@ -62,6 +73,8 @@ case $zonename in
 				DESTPATH="/opt/local/bin/check_mk_agent"
 				SOURCEMANIFEST=${basedir}/support_solaris/check_mk-tcp.xml.smartoszone
 				DESTMANIFEST=/var/svc/manifest/network/check_mk-tcp.xml
+				DESTLIBDIR=/opt/local/lib/check_mk_agent
+				DESTCONFDIR=/opt/local/etc/check_mk
 				;;
 			*) UNAME=undef
 				echo "Unable to identify solaris version. Quitting."
@@ -70,6 +83,17 @@ case $zonename in
 		esac
 		;;
 esac
+
+if [ ! -d ${DESTLIBDIR} ] 
+then
+	mkdir -p ${DESTLIBDIR}
+fi
+
+if [ ! -d ${DESTCONFDIR} ] 
+then
+	mkdir -p ${DESTCONFDIR}
+fi
+
 
 # Install EXECUTABLES
 if [ "${EXECUTABLES}" != "" ] 
@@ -94,25 +118,38 @@ else
 	echo "check_mk	6556/tcp" >> /etc/services
 fi
 
-if [ -f ${DESTPATH} ]
+if [ -f ${DESTPATH} ] && [ $FORCE -ne 1 ] 
 then
 	echo "Found check_mk agent."
 else
 	echo "Installing check_mk agent."
-	cp ${agentpath} ${DESTPATH}
+  cat ${agentpath} | sed -e "s:export MK_LIBDIR=.*$:export MK_LIBDIR=${DESTLIBDIR}:" | sed -e "s:export MK_CONFDIR=.*$:export MK_CONFDIR=${DESTCONFDIR}:" > ${DESTPATH}
+  chmod +x ${DESTPATH}
 fi
 
-if svcs check_mk/tcp:default 1> /dev/null
+if svcs check_mk/tcp:default 1> /dev/null 
 then 
-	echo "Found service definition for check_mk"
+	FOUNDSVC=1
+  ADDSVC=0
 else
+	FOUNDSVC=0
+	ADDSVC=1
+fi
+
+if [ $FOUNDSVC  -eq 1 ] && [ $FORCE -ne 1 ] 
+then
+	echo "Found service definition for check_mk"
+elif [ $FOUNDSVC -eq 1 ] && [ $FORCE -eq 1 ] 
+then
+  svcadm disable check_mk/tcp:default
+  svccfg delete check_mk/tcp:default
+  ADDSVC=1
+fi
+	
+if [ $ADDSVC -eq 1 ] 
+then
 	echo "Adding service defintion for check_mk"
-	if [ -f ${DESTMANIFEST} ] 
-	then
-		echo "Found service manifest. Importing."
-	else
-		cp ${SOURCEMANIFEST} ${DESTMANIFEST}
-	fi
+	cp ${SOURCEMANIFEST} ${DESTMANIFEST}
 	svccfg import ${DESTMANIFEST}
 	svcadm enable check_mk/tcp:default
 fi

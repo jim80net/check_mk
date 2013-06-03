@@ -58,7 +58,7 @@
 		<propval name='converted' type='boolean' value='true' />
 		<propval name='version' type='integer' value='1' />
 		<propval name='source_line' type='astring' value=
-'check_mk stream tcp nowait root /usr/sbin/tcpd /opt/custom/bin/check_mk_agent'
+'check_mk stream tcp nowait root /usr/sbin/tcpd /opt/local/bin/check_mk_agent'
 		/>
 	</property_group>
 
