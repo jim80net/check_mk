@@ -124,8 +124,8 @@ then
 else
 	echo "Installing check_mk agent."
 	mkdir -p ${DESTPATH}
-	cat ${agentpath} | sed -e "s:export MK_LIBDIR=.*$:export MK_LIBDIR=${DESTLIBDIR}:" | sed -e "s:export MK_CONFDIR=.*$:export MK_CONFDIR=${DESTCONFDIR}:" > ${DESTPATH}
-  	chmod +x ${DESTPATH}
+	cat ${agentpath} | sed -e "s:export MK_LIBDIR=.*$:export MK_LIBDIR=${DESTLIBDIR}:" | sed -e "s:export MK_CONFDIR=.*$:export MK_CONFDIR=${DESTCONFDIR}:" > ${DESTPATH}/check_mk_agent
+  	chmod +x ${DESTPATH}/check_mk_agent
 fi
 
 if svcs check_mk/tcp:default 1> /dev/null 
